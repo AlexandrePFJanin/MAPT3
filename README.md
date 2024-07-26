@@ -15,13 +15,13 @@ cd MAPT3-main/
 
 ### 2. Creation of a new environment
 
-We strongly recommend installing MAPT<sup>3</sup> in a python environment other than the base using [conda](https://conda.io/projects/conda/en/latest/index.html):
+We strongly recommend installing MAPT<sup>3</sup> in a python environment different from the base using [conda](https://conda.io/projects/conda/en/latest/index.html):
 
 ```
 conda create --name mapt3
 ```
 
-Then activate the new environment:
+Activate the new environment:
 
 ```
 conda activate mapt3
