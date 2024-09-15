@@ -1,6 +1,6 @@
 <p align="center">
     <img src="./icons/MAPT3-logo-full.png#gh-light-mode-only" height="150" width="327"/>
-    <img src="./icons/MAPT3-logo-mini-circle-alpha.png#gh-dark-mode-only" height="150" width="120"/>
+    <img src="./icons/MAPT3-logo-mini-circle-alpha.png#gh-dark-mode-only" height="150" width="150"/>
 </p>
 
 # MAPT<sup>3</sup>
