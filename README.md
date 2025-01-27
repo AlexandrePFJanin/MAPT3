@@ -56,5 +56,11 @@ As you used [pip](https://pip.pypa.io/en/stable/) for the installation, use it t
 pip uninstall MAPT3
 ```
 
+## Use MAPT<sup>3</sup>:
+
+An example of a simple workflow using MAPT<sup>3</sup> is provided in [docs/sample](./docs/sample/) with scripts and data. Read the associated [README](./docs/sample/README.txt) file carefully and follow the step-by-step instructions.
+
+
+
 
 
