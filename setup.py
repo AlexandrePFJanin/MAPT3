@@ -7,7 +7,7 @@ setup(
    author_email='alexandre.janin@protonmail.com',
    url='https://github.com/AlexandrePFJanin/MAPT3',
    packages=['MAPT3'],
-   license='LICENSE.md,
+   license='LICENSE.md',
    description='Multi-disciplinary and Automatic Plate Tessellation and Time tracking Toolkit.',
    long_description=open('README.md').read(),
    install_requires=[
