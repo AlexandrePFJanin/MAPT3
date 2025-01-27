@@ -1,0 +1,34 @@
+------------------------
+TTKtessellation log file
+------------------------
+
+ --- INPUT ---
+
+Working file:       /home/alexandre/Documents/sample/XDMF-H5/AGE467-555_llsvp_vp00071.xdmf
+File dtype:         xdmf
+pointArray loaded:  Cartesian Velocity, Pressure, Spherical Velocity, PointID
+velocityField name: Cartesian Velocity
+paraview version declared : 5.11
+
+ --- PROCESSING ---
+
+Gradient name:           GSV
+Mag Gradient name:       magGSV
+normalize Mag Gradient:  False
+Detected persistenceMin: 0.0
+Detected persistenceMax: 968443.6652450049
+Imposed persistenceMin:  1000
+Imposed persistenceMax:  None
+Morse complex:           ascending
+Number of plates:        596
+
+ --- OUTPUT ---
+
+Working path:    /home/alexandre/Documents/sample/1-Tessellation/TTK_outputs/p01000/
+Output data available on path:
+    - Surfaces directory: Surfaces_AGE467-555_llsvp_vp00071
+       -> Creation of a new directory
+    - Edges directory: Edges_AGE467-555_llsvp_vp00071
+       -> Creation of a new directory
+    - Boundary file:   1SeparatriceGeom_AGE467-555_llsvp_vp00071.csv
+    - Log file:        /home/alexandre/Documents/sample/1-Tessellation/TTK_outputs/p01000/TTKtessellation_AGE467-555_llsvp_vp00071.log

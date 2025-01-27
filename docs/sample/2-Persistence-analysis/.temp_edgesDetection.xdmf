@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">
+  <Domain>
+    <Grid GridType="Uniform">
+      <Topology TopologyType="Triangle" Dimensions="6">
+        <DataItem Dimensions="6 3" NumberType="Int" Precision="8" Format="HDF">.temp_edgesDetection.h5:/Topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XYZ">
+        <DataItem Dimensions="8 3" NumberType="Float" Precision="4" Format="HDF">.temp_edgesDetection.h5:/Geometry/Points</DataItem>
+      </Geometry>
+      <Attribute Name="pointsID" Active="1" AttributeType="None" Center="Node">
+        <DataItem Dimensions="8" NumberType="Float" Precision="4" Format="HDF">.temp_edgesDetection.h5:/Node/field</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>

@@ -1,0 +1,16 @@
+------------------------
+TTKplateTracking log file
+------------------------
+
+Number of time steps: 3
+
+Working files:
+   - /home/alexandre/Documents/sample/3-Time-Tracking/PERSISTENCE-DIAG/AGE467-555_llsvp_vp00071_optimized.xdmf
+   - /home/alexandre/Documents/sample/3-Time-Tracking/PERSISTENCE-DIAG/AGE467-555_llsvp_vp00073_optimized.xdmf
+   - /home/alexandre/Documents/sample/3-Time-Tracking/PERSISTENCE-DIAG/AGE467-555_llsvp_vp00075_optimized.xdmf
+
+Exportation of the state file:
+   - path: ./TRACKING/
+   - file: TTKPlateTimeTracking_statefile.py
+
+Process complete
