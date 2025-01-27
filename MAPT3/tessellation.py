@@ -1524,9 +1524,10 @@ class PlateGather:
         self.im('Get the neighborhood of all plates')
         if not on_poly:
             self.neighborhood = []
+            upID = np.unique(self.plateID)
             for i in range(self.nop):
-                left  = np.unique(self.platecouple[self.platecouple[:,0] == i][:,1])
-                right = np.unique(self.platecouple[self.platecouple[:,1] == i][:,0])
+                left  = np.unique(self.platecouple[self.platecouple[:,0] == upID[i]][:,1])
+                right = np.unique(self.platecouple[self.platecouple[:,1] == upID[i]][:,0])
                 self.neighborhood.append(np.unique(np.concatenate((left,right))))
         else:
             self.neighborhood = [[] for i in range(self.nop_poly)]
@@ -1545,9 +1546,10 @@ class PlateGather:
             self.im('      -> average mindist = '+str(mindist))
             nop     = self.nop_poly
             plateID = self.plateIDpoly
+            upID    = np.unique(self.plateIDpoly)
             self.im('   - Iteration on all plateIDpoly')
             for i in tqdm(range(nop)):
-                mask   = plateID == i
+                mask   = plateID == upID[i]
                 for j in range(np.count_nonzero(mask)):
                     xj    = self.x[mask][j]
                     yj    = self.y[mask][j]
