@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: Alexandre JANIN
-@aim:    Generic errors
+@aim:    Generic rountines
 """
 
 # External dependencies:

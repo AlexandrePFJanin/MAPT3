@@ -28,7 +28,7 @@ def xyz2latlon(x,y,z):
 
 def latlon2xyz(lat,lon,R=Project.modelRadius):
     """
-    Return the X,Y,Z cartesian coordinates in the ECEF reference frame
+    Returns the X,Y,Z cartesian coordinates in the ECEF reference frame
     of a point described by a geodetic coordinates (lat,lon) and the radius
     of the sphere R (default, R=MAPT3.Project.modelRadius)
 

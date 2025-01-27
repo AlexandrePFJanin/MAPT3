@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: Alexandre JANIN
-@aim:    Geometric transformations
+@aim:    Planetary models data
 """
 
 
@@ -12,22 +12,20 @@ class Planet():
     """
     Main class for planetary models
     """
-    pass
+    def __init__(self, radius=0):
+        self.radius = radius # mean radius in [km]
 
 class EarthModel(Planet):
     def __init__(self):
-        super().__init__()
-        self.radius = 6371.0088 # mean radius in [km]
+        super().__init__(radius=6371.0088)
 
 class VenusModel(Planet):
     def __init__(self):
-        super().__init__()
-        self.radius = 6051.8    # mean radius in [km]
+        super().__init__(radius=6051.8)
 
 class MarsModel(Planet):
     def __init__(self):
-        super().__init__()
-        self.radius = 3389.5    # mean radius in [km]
+        super().__init__(radius=3389.5)
 
 
 # ----------------- INSTANCES -----------------
@@ -35,4 +33,4 @@ class MarsModel(Planet):
 
 Earth = EarthModel()
 Venus = VenusModel()
-Mars  = VenusModel()
+Mars  = MarsModel()
