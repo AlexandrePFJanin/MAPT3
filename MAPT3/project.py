@@ -33,6 +33,7 @@ class MAPT3Project:
                               2000])    # minimum persistence thresholds tested during the tessellation
                                         # be careful: have to be ordered from small values to large values 
         # Optimisation
+        self.rseed = 5730               # random seed used during the optimization if the randomization option is activated
         self.P1c = 0.90                 # critical (minimal) plateness of plates to be defined as rigid
         self.P2c = 0.80                 #   -> Definition of plateness after Janin et al., 2024, Alisic et al., 2012
                                         #   -> Values defined in Janin et al., 2024
@@ -53,6 +54,8 @@ class MAPT3Project:
             raise ProjectCheckError('P2c have to be in [0,1]')
         if self.fragment_size >= self.nop:
             raise ProjectCheckError('Inconsistency: fragment_size have to be < nop')
+        if not isinstance(self.rseed, int) or self.rseed < 0:
+            raise ProjectCheckError('The random seed must be a positive real number between 0 and 2**32 - 1')
         
     
     def set(self,parfile,verbose=False):
@@ -79,49 +82,54 @@ class MAPT3Project:
         # ---
         try:
             self.path = os.path.abspath(mod.path)
-            im('Importation of proj path:\n  -> '+self.path,pName,verbose)
+            im('Importation of proj path:\n  -> '+str(self.path),pName,verbose)
         except:
-            im('Importation of proj path:\n  -> default',pName,verbose)
+            im('Importation of proj path:\n  -> default (%s)'%str(self.path),pName,verbose)
         try:
             self.nop = mod.nop
             im('Importation of nop:\n  -> '+str(self.nop),pName,verbose)
         except:
-            im('Importation of nop:\n  -> default',pName,verbose)
+            im('Importation of nop:\n  -> default (%s)'%str(self.nop),pName,verbose)
         try:
             self.planetaryModel = mod.planetaryModel
             im('Importation of a planetary model:\n  -> '+str(self.planetaryModel),pName,verbose)
         except:
-            im('Importation of a planetary model:\n  -> default',pName,verbose)
+            im('Importation of a planetary model:\n  -> default (%s)'%str(self.planetaryModel),pName,verbose)
         try:
             self.modelRadius = mod.modelRadius
             im('Importation of the radius:of the model surface:\n  -> '+str(self.modelRadius),pName,verbose)
         except:
-            im('Importation of the radius:of the model surface:\n  -> default',pName,verbose)
+            im('Importation of the radius:of the model surface:\n  -> default (%s)'%str(self.modelRadius),pName,verbose)
         try:
             self.polyminsize = mod.polyminsize
-            im('Importation of a minimum polygon size:\n  -> '+str(self.modelRadius),pName,verbose)
+            im('Importation of a minimum polygon size:\n  -> '+str(self.polyminsize),pName,verbose)
         except:
-            im('Importation of a minimum polygon size:\n  -> default',pName,verbose)
+            im('Importation of a minimum polygon size:\n  -> default (%s)'%str(self.polyminsize),pName,verbose)
         try:
             self.pmin = mod.pmin
             im('Importation of a list of minimum persistence thresholds for the tessellation:\n  -> '+str(self.pmin),pName,verbose)
         except:
-            im('Importation of a list of minimum persistence thresholds for the tessellation:\n  -> default',pName,verbose)
+            im('Importation of a list of minimum persistence thresholds for the tessellation:\n  -> default (%s)'%str(self.pmin),pName,verbose)
+        try:
+            self.rseed = mod.rseed
+            im('Importation of the random seed for the optimization:\n  -> '+str(self.rseed),pName,verbose)
+        except:
+            im('Importation of the random seed for the optimization:\n  -> default (%s)'%str(self.rseed),pName,verbose)
         try:
             self.P1c = mod.P1c
             im('Importation of P1c:\n  -> '+str(self.P1c),pName,verbose)
         except:
-            im('Importation of P1c:\n  -> default',pName,verbose)
+            im('Importation of P1c:\n  -> default (%s)'%str(self.P1c),pName,verbose)
         try:
             self.P2c = mod.P2c
             im('Importation of P2c:\n  -> '+str(self.P2c),pName,verbose)
         except:
-            im('Importation of P2c:\n  -> default',pName,verbose)
+            im('Importation of P2c:\n  -> default (%s)'%str(self.P2c),pName,verbose)
         try:
             self.fragment_size = mod.fragment_size
             im('Importation of a minimum fragment size for the plate rigidity:\n  -> '+str(self.fragment_size),pName,verbose)
         except:
-            im('Importation of a minimum fragment size for the plate rigidity:\n  -> default',pName,verbose)
+            im('Importation of a minimum fragment size for the plate rigidity:\n  -> default (%s)'%str(self.fragment_size),pName,verbose)
         # control
         self.check()
 

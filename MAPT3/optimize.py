@@ -505,11 +505,12 @@ def optimize(path2h5file, pthreshold, ofile, output_path='./', small_plate = Pro
         geographic_search (int, optional): Method to determined the next anchor point.
                             Have to be either 1 or 0.
                             If geographic_search == 0:
-                                Geographic search: Deterministic. The next anchor is choose
+                                Geographic search: Deterministic. The next anchor is chosen
                                 as being the next one in the input sequence (reproductible)
                             If geographic_search == 1:
-                                Geographic search: Randomized. The next anchor is choose
-                                randomly.
+                                Geographic search: Randomized. The next anchor is chosen
+                                randomly but the result of the optimization is reproductible
+                                with a random seed set in MAPT3.project.Project.rseed.
                             Defaults: geographic_search = 0
         add_missedPlates (bool, optional): If set to True: Add the missed points as plates with
                             clustering. Else, these points will be simply ignored.
@@ -557,7 +558,7 @@ def optimize(path2h5file, pthreshold, ofile, output_path='./', small_plate = Pro
                             Defaults: plot = True
     """
     # reference value of pmin
-    pmin_ref_ID = -1 # allways starts from  the highest value
+    pmin_ref_ID = -1 # always starts from the highest value
     
     # compute the time need for the optimization
     time0 = time()
@@ -580,6 +581,9 @@ def optimize(path2h5file, pthreshold, ofile, output_path='./', small_plate = Pro
         print('\n'+'Geographic search: Deterministic')
     elif geographic_search == 1:
         print('\n'+'Geographic search: Randomized')
+        print('   -> random seed used: '+str(Project.rseed))
+        # set the random seed
+        np.random.seed(Project.rseed)
     else:
         raise OptimizationSettingsError('Unrecognized value for the argument geographic_search')
 
@@ -651,7 +655,7 @@ def optimize(path2h5file, pthreshold, ofile, output_path='./', small_plate = Pro
         print()
         print('-------')
         print('Remaining points: '+str(np.count_nonzero(todo))+'/'+str(len(todo))+': '+str(int(100*np.count_nonzero(todo)/len(todo)))+'%')
-        print('Plate ID: '+str(pID)+', \t Surface: '+str(surf))
+        print('Anchor point: '+str(ptID)+', \t Plate ID: '+str(pID)+', \t Surface: '+str(surf))
         
         #  Define here what is a small plate 
         if surf > small_plate:

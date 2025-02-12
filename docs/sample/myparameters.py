@@ -46,6 +46,10 @@ pmin = np.array([1000, 2000])
 P1c = 0.90
 P2c = 0.80
 
+# Random seed used during the optimization if
+# the randomization is activated (type: int >0)
+rseed = 5730
+
 # Area of the smallest spatial fragment for
 # which the plateness have to be good to be
 # considered as rigid.
