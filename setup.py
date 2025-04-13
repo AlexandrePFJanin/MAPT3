@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
    name='MAPT3',
-   version='0.1.0',
+   version='0.1.1',
    author='Alexandre JANIN',
    author_email='alexandre.janin@protonmail.com',
    url='https://github.com/AlexandrePFJanin/MAPT3',

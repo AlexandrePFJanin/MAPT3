@@ -26,6 +26,7 @@ class OptimizationSettingsError(TessellationOptimizationError):
         super().__init__('Error: Bad argument passed to the function\n'+msg)
 
 
+
 class ProjectError(Exception):
     """ Main class for MAPT3 project errors"""
     pass
@@ -45,6 +46,12 @@ class ProjectCheckError(ProjectError):
     def __init__(self,msg=''):
         super().__init__("Error: Bad project configuration.\n"+msg)
 
+class SizeError(ProjectError):
+    """Raised when error on array size"""
+    def __init__(self,msg=''):
+        super().__init__("Error: Bad array size.\n"+msg)
+
+
 
 class TimeTrackingError(Exception):
     """ Main class for MAPT3 time tracking errors"""
@@ -54,4 +61,5 @@ class LoadingFormatError(TimeTrackingError):
     """Raised when bad format passed during the loading of the tracking file"""
     def __init__(self,msg):
         super().__init__('Error: Unkown input format. The data format have to be in '+msg)
+
 
