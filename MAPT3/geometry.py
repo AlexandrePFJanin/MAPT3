@@ -18,6 +18,16 @@ from .project import Project
 # ----------------- FUNCTIONS -----------------
 
 
+def heron(a,b,c):
+    """
+    Heron's formula for the area of a triangle in terms
+    of the three side lengths a, b and c.
+    """
+    s = (a + b + c) / 2   
+    area = (s*(s-a) * (s-b)*(s-c)) ** 0.5        
+    return area
+
+
 def distance3d(x1,y1,z1,x2,y2,z2):  
     """
     Distance function for the function MAPT3.geometry.areatriangle3d
