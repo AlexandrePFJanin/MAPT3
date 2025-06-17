@@ -121,22 +121,50 @@ The content of this simple workflow step by step:
           in the good order the fictive
           persistence diagram generated before.
         - 3. Open the state file in Paraview,
-          select all the loaded file and apply
-          on them the TTK filter
+          select all the loaded file in the
+          pipeline browser and apply on them
+          the TTK filter
           'TTKTrackingFromPersistenceDiagrams'.
-          Export in the output in .csv
-          (here, the output file is called
-          'mytracking.csv').
+          We recommend the following input
+          options for this filter (available
+          in the 'Properties' of the filter):
+            - Persistence threshold = 0
+              (no cleaning)
+            - Extremum weight = 0
+            - Saddle weight   = 0
+              (0 weight on the persistence space)
+            - X weight = 1
+            - Y weight = 1
+            - Z weight = 1
+              (weight only on position)
+          The tracking will appear as lines
+          connecting the barycenters.
           NOTE: functions tested with
           Paraview 5.10.0
-        - 4. 'adjust_tracking.py' adjusts the
+        - 4. Export in the tracking in .csv
+          (here, the output file is called
+          'mytracking.csv').
+          In the Paraview pipeline browser,
+          select your filter
+          "TTKTrackingFromPersistenceDiagrams1"
+          Then, on the Menu bar, click on
+          File > Save Data.
+          Give a path and a file name for the
+          output file. Select ".csv" for the 
+          type of file.
+          In this example the file is:
+          '3-Time-Tracking/TRACKING/myTracking.csv'
+        - 5. 'adjust_tracking.py' adjusts the
           time tracking file (reformatting
           and check for missing plates i.e.
           plates on a single time step).
+          Reads the tracking '.csv' file generated
+          during the last step. Make sure to
+          give the good path and file name.
           In this example, export the adjusted
           tracking file 'myTracking_adjusted.csv'
           in the directory 'TRACKING/'.
-        - 5. 'analyseAdjTracking.py' shows a
+        - 6. 'analyseAdjTracking.py' shows a
           simple example of how to use MAPT3
           to manipulate the time tracking data.
           Generates a figure showing the plate
@@ -157,7 +185,7 @@ References:
   - Janin, A., Coltice, N., Chamot-Rooke, N., Tierny, J.
     Topological data analysis reveals mantle-lithosphere
     dynamical interactions through global plate reorganisations.
-    in prep. (2025)
+    Nature Geoscience. (accepted, 2025)
 
   - Masood, T. B., Budin, J., Falk, M., Favelier, G., Garth, C.,
     Gueunet, C., Guillou, P., Hofmann, L., Hristov, P.,
