@@ -1,5 +1,14 @@
-MAPT3
-Copyright 2024-2025 Alexandre P. F. Janin
+MAPT3 - Multi-disciplinary and Automatic Plate Tessellation and Time tracking Toolkit
 
-This product was exclusively developped by
-Alexandre Janin (https://github.com/AlexandrePFJanin)
+Copyright 2025 Alexandre JANIN
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+---
+
+Contributors:
+- Alexandre JANIN (Lead developer and maintainer)
