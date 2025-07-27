@@ -12,6 +12,7 @@ import random
 
 # Internal dependencies:
 from .geotransform import xyz2latlon, Rgt
+from .generics import im
 
 
 
@@ -61,41 +62,95 @@ def cartfipole(x,y,z,wx,wy,wz):
 
 
 
-def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=False,kappa=1,ponderated=False,plot=True,rplot=100,\
-    scale=6e4,width=5e-4,verbose=True):
+def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,residual0=1e17,small=1e-6,tarantola=False,kappa=1,ponderated=False,\
+            plot=True,rplot=100,scale=6e4,width=5e-4,verbose=True):
     """
     regEEPP: Regularized Estimation of Euler Pole Parameters for a tessellated polygon
 
     Inverses the surface velocity field of a plate/block and returns the rotation vector.
+    The inversion scheme is based on an iterative regularized solution.
+    The inversion is considered as converged when the absolute and/or relative error criteria
+    and/or the maximum number of iterations are reached (see in Args/Convergence Scheme).
     
     Args:
-        pttk = MAPT3.tessellation.TessellatedPolygon object containing position of points and velocity vectors.
-         <optional>: r       = int, resampling parameter to do the inversion just on a part of the dataset [default, r=1]
-                     mp      = tuple, prior model for (Wx,Wy,Wz) [default, mp=(1,1,1)]
-                     maxiter = int,  maximum number of iteration [default, maxiter=100]
-                     errmax  = float, maximum residual [default, errmax=0.01]
-                     convmax = minimum residual difference allowed between two consecutive iterations
-                               [default, convmax=1e-3]
-                     tarantola = bool, to adopte the Generalized Least Square formulation (Tarantola 2005)
-                                 otherwise, the numerical sheme will be tykhonov regularization
-                                 [default, tarantola=False]
-                     kappa   = int, tykhonov regularization parameter used only if tarantola == False
-                               [default, kappa=1]
-                     plot    = bool, option to display the solution [default, plot = True]
-                     rplot   = int, resampling parameter to enable to plot all the data
-                     verbose = bool, if True then produce a verbose output
+        --- mandatory:
+
+                    pttk = MAPT3.tessellation.TessellatedPolygon object containing position of points and velocity vectors.
+        
+        --- optional: 
+
+                    --- General:
+         
+                    r       = (int), resampling parameter to do the inversion just on a part of the dataset [default, r=1]
+                    mp      = (tuple), prior model for (Wx,Wy,Wz) [default, mp=(1,1,1)]
+
+                    --- Convergence scheme: May require adaptation depending on velocities values
+
+                    maxiter = (int),  maximum number of iteration [default, maxiter=100]
+                              -> convergence reached by max number of iterations
+                    errmax  = (float), maximum residual to define the convergence [default, errmax=0.01]
+                              Inversion considered as converged when residual < errmax
+                              -> convergence on absolute error
+                    convmax = (float) minimum residual difference allowed between two consecutive
+                              iterations [default, convmax=1e-3]. Inversion considered as converged
+                              when abs(residual[-1]-residual[-2]) < convmax
+                              -> convergence on relative error
+                              NOTE: If residual0 is not choosen carefully, may converge to early.
+                    residual0 = (None or float), initial residual associated to the prior.
+                                If residual0 is None, then will compute the true residual associated to the
+                                set input prior model. Be careful, if errmax is too large, may reach the convergence
+                                without any inversion, just with the a priori model. Now you know :)
+                                Else, if residual is a float, will replace the true prior residual to force
+                                the function to perform at least an inversion if residual0 is set very large
+                                relative to the errmax (recommended option). [default, residual0=1e17]
+                    small = (float), define the level of noise (small fluctuation) for the covariance of data.
+                                Will be added to Cd in order to avoid singularity problem during the inversion.
+                                The code will rise a warning if small is not at least x1000 smaller than the
+                                values of the Cd matrix. [default, small=1e-6]
+                    
+                    --- Inversion scheme and parameters:
+                    
+                    tarantola = (bool), to adopte the Generalized Least Square formulation (Tarantola 2005)
+                                otherwise, the numerical sheme will be tykhonov regularization
+                                [default, tarantola=False]
+                    kappa   = (int), tykhonov regularization parameter used only if tarantola == False
+                              [default, kappa=1]
+
+                    --- Figure
+
+                    plot    = (bool), option to display the solution [default, plot = True]
+                    rplot   = (int), resampling parameter to enable to plot all the data [default, rplot=100]
+                    scale   = (int/float), scale factor for the representation of the velocity vectors. [default, scale=6e4]
+                    width   = (int/float), width factor for the representation of the velocity vectors. [default, width=5e-4]
+                    verbose = (bool), if set to True, then activate the verbose output for this function.
+                              [default, verbose=True]
     Returns:
-        wx,wy,wz : the rotation vector in * RADIANS/Mys *
-                   (the appriated format for the function wxwywz2latlonw.)
+        wx,wy,wz (tuple of float):
+                   the rotation vector in * RADIANS/Mys * (or equivalent if the time scale
+                   of the velocities is not in Myrs). Return the appriated format to feed the function wxwywz2latlonw.
                    -> to transform the vector in rotation pole with :
                       lon_pole [deg], lat_pole [deg] and omega [deg/Myr] do:
                       lon,lat,omega = wxwywz2latlonw(wx,wy,wz) # latp,lonp directly in deg but omega in rad/Myr
                       omega = omega * 180/np.pi
+        residual (list): list of residuals
+        misfit_xyz (numpy.ndarray): XYZ (dvx,dvy,dvz) misfit on each grid point where the inversion where computed
+        misfit_enu (numpy.ndarray): ENU (dvlon,dvlat,dvr) misfit on each grid point where the inversion where computed
+        misfit_normcossprod (numpy.ndarray): normalized cross product Vfit x Vobs
+        P1 (float): estimate of the plateness P1
+        P2 (float): estimate of the plateness P2
+        P1loc (numpy.ndarray): pre-P1 array from the local evaluation of the fit
+        P2loc (numpy.ndarray): pre-P1 array from the local evaluation of the fit)
+        mask (numpy.array): mask computed from the input argument 'r' and defining which points were used during the inversion
     """
+    pName = 'regEEPP'
+    im('Regularized Estimation of Euler Pole Parameter', pName=pName, verbose=verbose)
+
     N    = int(len(pttk.x)/r)
     id   = list(range(len(pttk.x)))
     mask = random.sample(id,N)
-    
+
+    im('Inversion on: N = %s/%s points (r = %s)'%(str(N),str(pttk.x.shape[0]),str(r)), pName=pName, verbose=verbose)
+
     x = pttk.x[mask]
     y = pttk.y[mask]
     z = pttk.z[mask]
@@ -103,6 +158,16 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
     vx = pttk.vx[mask]
     vy = pttk.vy[mask]
     vz = pttk.vz[mask]
+
+    if residual0 is None:
+        # Considered the first residual as the one associated to the input prior model
+        vxfit, vyfit, vzfit = cartfipole(x,y,z,mp[0],mp[1],mp[2])
+        residual0 = np.sum(np.sqrt((vxfit-vx)**2+(vyfit-vy)**2+(vzfit-vz)**2))
+    else:
+        if np.isscalar(residual0):
+            pass
+        else:
+            raise ArithmeticError('pypStag.kinematics.regEEPP expects that residual0 is either None or a scalar.')
     
     N = len(x)
 
@@ -116,8 +181,9 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
     dvz = np.ones(N)*sigmaz
 
     # -------- ITERATIVE SHEME -----------
+    im('Iterative inversion', pName=pName, verbose=verbose)
     n            = 0                        # init iteration counter
-    residual     = [1e10]                    # init the residual
+    residual     = [residual0]                    # init the residual
     while  n < maxiter:
         if residual[-1] < errmax:           # break if reached the residual convergence criterion
             break                                        
@@ -138,8 +204,15 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
             cartv[i*3:(i+1)*3]      = np.array([vx[i],vy[i],vz[i]])
 
         Cd    = np.diag(errors)             # cov matrix data
-        small = np.eye(len(Cd))*1e-5
-        Cd = Cd + small # avoid singularites
+        Cd_noise = np.eye(len(Cd))*small    # small fluctuation
+
+        # test the amplitude of small regarding Cd
+        norm_error = np.linalg.norm(errors)
+        if small > 1000 * norm_error:
+            # warning: force the output of a verbose output
+            im("WARNING: 'small' (set to %s) is not small compared to the error on the data (estimated to %s). Can lead to a biased solution."%(str(small), str(norm_error)), pName=pName, verbose=True, warn=True)
+
+        Cd = Cd + Cd_noise                  # avoid singularites
         Cdinv = np.linalg.inv(Cd)           # inv cov matrix
         tykhonov = np.linalg.inv(np.dot(A.T,np.dot(Cdinv,A))) # tykhonov matrix
         W = np.dot(A,mp)-cartv   
@@ -164,31 +237,32 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
             break
         # Model update
         mp = m
-    if verbose:
-        print('---- Inversion diagnostic:')
-        if n == maxiter:
-            print('- StopCondition: Max iteration number reached')
-            print('     | N = ',n)
-            print('     | R = ',residual[-1])
-        if residual[-1] < errmax:
-            print('- StopCondition: Residual condition reached')
-            print('     | N = ',n)
-            print('     | R = ',residual[-1])
-        if residual[-2]-residual[-1] <= convmax:
-            print('- StopCondition: Convergence reached')
-            print('     | N = ',n)
-            print('     | R = ',residual[-1])
-        print()
+
+    # verbose output for diagnostics
+    im('--> Convergence reached.', pName=pName, verbose=verbose)
+    im('Inversion diagnostic:', pName=pName, verbose=verbose)
+    if n == maxiter:
+        im('- StopCondition: Max iteration number reached', pName=pName, verbose=verbose)
+        im('     | N = '+str(n), pName=pName, verbose=verbose)
+        im('     | R = '+str(residual[-1]), pName=pName, verbose=verbose)
+    if residual[-1] < errmax:
+        im('- StopCondition: Residual condition reached', pName=pName, verbose=verbose)
+        im('     | N = '+str(n), pName=pName, verbose=verbose)
+        im('     | R = '+str(residual[-1]), pName=pName, verbose=verbose)
+    if residual[-2]-residual[-1] <= convmax:
+        im('- StopCondition: Convergence reached', pName=pName, verbose=verbose)
+        im('     | N = '+str(n), pName=pName, verbose=verbose)
+        im('     | R = '+str(residual[-1]), pName=pName, verbose=verbose)
 
     # -------- OUTPUT ------------
     
     # My resulting model: My inverted rotations
     wx,wy,wz = m
 
-    if verbose:
-        print('My solution: (Wx,Wy,Wz) =',wx,wy,wz)
-        print('Solution norm:',np.linalg.norm(np.array([wx,wy,wz])))
-        print('My Residual:  ',residual[-1])
+    # verbose
+    im('My solution: (Wx,Wy,Wz) = (%s,%s,%s)'%(str(wx),str(wy),str(wz)), pName=pName, verbose=verbose)
+    im('Solution norm: '+str(np.linalg.norm(np.array([wx,wy,wz]))), pName=pName, verbose=verbose)
+    im('My Residual:   '+str(residual[-1]), pName=pName, verbose=verbose)
 
     # Get the velocities
     vxfit, vyfit, vzfit = cartfipole(x,y,z,wx,wy,wz)
@@ -256,32 +330,35 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
     P1 = P1/nod2
     P2 = 1-P2/nod2
     
-    if verbose:
-        print("P1 plateness: "+str(P1))
-        print("P2 plateness: "+str(P2))
+    # verbose:
+    im('P1 plateness: '+str(P1), pName=pName, verbose=verbose)
+    im('P2 plateness: '+str(P2), pName=pName, verbose=verbose)
     
+    # call figures
     if plot:
-        
+        im('Preparation of the figures', pName=pName, verbose=verbose)
         lon = lon*180/np.pi
         lat = -(lat*180/np.pi-90)
-        
         lon = lon[::rplot]
         lat = lat[::rplot]
-        
-        plt.figure()
-        plt.title('Resudial plot')
+
+        # --- Figure 1
+        fig = plt.figure(figsize=(10,8))
+        ax  = fig.add_subplot(111)
+        ax.set_title('Resudial plot')
         xresidual = list(range(0,len(residual)))
         xresidualbis = xresidual[1:len(residual)]
-        plt.plot(xresidual,residual,'or',label='residual')
-        plt.plot(xresidual,residual,'--',color='red')
-        plt.plot(xresidualbis,residual[1:len(residual)],'-',color='red')
-        plt.xlabel('iteration number')
-        plt.ylabel('residual')
+        ax.plot(xresidual,residual,'or',label='residual')
+        ax.plot(xresidual,residual,'--',color='red')
+        ax.plot(xresidualbis,residual[1:len(residual)],'-',color='red')
+        ax.set_xlabel('iteration number')
+        ax.set_ylabel('residual')
         minr,maxr = np.amin(residual[1:len(residual)]),np.amax(residual[1:len(residual)])
-        plt.ylim(minr-0.1*(maxr-minr),maxr+0.1*(maxr-minr))
-        plt.legend()
+        ax.set_ylim(minr-0.1*(maxr-minr),maxr+0.1*(maxr-minr))
+        ax.legend()
         plt.show()
 
+        # --- Figure 2
         fig = plt.figure(figsize=(15,5))
         ax1 = fig.add_subplot(131)
         fig.suptitle('Result of the best fit in the velocity space')
@@ -306,6 +383,7 @@ def regEEPP(pttk,r=1,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,tarantola=F
         ax3.legend()
         plt.show()
 
+        # --- Figure 3
         fig = plt.figure(figsize=(10,6))
         ax = fig.add_subplot(1,1,1, projection=ccrs.Robinson())
         ax.set_global()

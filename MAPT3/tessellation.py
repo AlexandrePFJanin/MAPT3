@@ -1566,45 +1566,103 @@ class PlateGather:
     
 
 
-    def get_rotation(self,plate1,remove_edges=False,r=100,rplot=1,on_poly=False,plot=True,maxiter=100,verbose=False):
+    def get_rotation(self,plate1,remove_edges=False,on_poly=False,
+                     r=100,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,residual0=1e17,\
+                     small=1e-6,tarantola=False,kappa=1,ponderated=False,\
+                     plot=True,rplot=10,scale=6e4,width=5e-4,verbose=False):
         """
         Get the best rotation fitting the velocity field of 'plate1'.
 
         Args:
+
             plate1 (int): ID of the plate/polygon whose velocity field you want to invert.
-            r (int, optional): Parameter controling the resampling of the data
-                        to inverse. The function called will resample randomly
-                        the surface velocity field of the plate/polygon 'plate1'.
-                        Otherwise, can be very long to large plate.
-                        Defaults: r = 100
-            
             remove_edges (bool, optional): Option controling if you want to remove
                         edege points from the data to invert.
                         Default: remove_edges = False
-            maxiter (int):  maximum number of iteration to converge.
-                        Defaults: maxiter=100
             on_poly (bool, optional): Option controling if you want to apply
                         the function on the plateIDpoly field (external
                         tessellation from a polygon file).
                         Defaults: on_poly = False
-            plot (bool, optional): If true, generates a figure showing the result
-                        of the inversion.
-                        Defaults: plot = True
-            rplot (int, optional): Only if plot is True. Controls the number of
-                        data point showed according to the data set considered
-                        for the inversion (so, including the resampling with the
-                        parameter 'r').
-                        Default: rplot = 1
-            verbose (bool, optional): If True then, generate a verbose output
-                        in the terminal.
-                        Defaults: verbose = False
+            
+            ------------------- INVERSION FUNCTION PARAMETERS -------------------
+
+            Use the function pypStag.kinematics.regEEPP()
+    
+            --- General
+
+            r       = (int), resampling parameter to do the inversion just on a part of the dataset [default, r=100]
+            mp      = (tuple), prior model for (Wx,Wy,Wz) [default, mp=(1,1,1)]
+
+            --- Convergence scheme: May require adaptation depending on velocities values
+
+            maxiter = (int),  maximum number of iteration [default, maxiter=100]
+                        -> convergence reached by max number of iterations
+            errmax  = (float), maximum residual to define the convergence [default, errmax=0.01]
+                        Inversion considered as converged when residual < errmax
+                        -> convergence on absolute error
+            convmax = (float) minimum residual difference allowed between two consecutive
+                        iterations [default, convmax=1e-3]. Inversion considered as converged
+                        when abs(residual[-1]-residual[-2]) < convmax
+                        -> convergence on relative error
+                        NOTE: If residual0 is not choosen carefully, may converge to early.
+            residual0 = (None or float), initial residual associated to the prior.
+                        If residual0 is None, then will compute the true residual associated to the
+                        set input prior model. Be careful, if errmax is too large, may reach the convergence
+                        without any inversion, just with the a priori model. Now you know :)
+                        Else, if residual is a float, will replace the true prior residual to force
+                        the function to perform at least an inversion if residual0 is set very large
+                        relative to the errmax (recommended option). [default, residual0=1e17]
+            small = (float), define the level of noise (small fluctuation) for the covariance of data.
+                        Will be added to Cd in order to avoid singularity problem during the inversion.
+                        The code will rise a warning if small is not at least x1000 smaller than the
+                        values of the Cd matrix. [default, small=1e-6]
+            
+            --- Inversion scheme and parameters:
+            
+            tarantola = (bool), to adopte the Generalized Least Square formulation (Tarantola 2005)
+                        otherwise, the numerical sheme will be tykhonov regularization
+                        [default, tarantola=False]
+            kappa   = (int), tykhonov regularization parameter used only if tarantola == False
+                        [default, kappa=1]
+
+            --- Figure
+
+            plot    = (bool), option to display the solution [default, plot=True]
+            rplot   = (int), resampling parameter to enable to plot all the data [default, rplot=10]
+            scale   = (int/float), scale factor for the representation of the velocity vectors. [default, scale=6e4]
+            width   = (int/float), width factor for the representation of the velocity vectors. [default, width=5e-4]
+            verbose = (bool), if set to True, then activate the verbose output for this function.
+                      [default, verbose=False]
+        
+        Returns:
+            (wx, wy, wz) (tuple of float):
+                   the rotation vector in * RADIANS/Mys * (or equivalent if the time scale
+                   of the velocities is not in Myrs). Return the appriated format to feed the function 
+                   pypStag.kinematics.wxwywz2latlonw().
+                   -> to transform the vector in rotation pole with :
+                      lon_pole [deg], lat_pole [deg] and omega [deg/Myr] do:
+                      lon,lat,omega = wxwywz2latlonw(wx,wy,wz) # latp,lonp directly in deg but omega in rad/Myr
+                      omega = omega * 180/np.pi
+
+            Fills the internal fields: See the documentation of the inversion function.
+                self.wx1, self.wy1, self.wz1: rotation vector
+                self.residual1: list of residuals
+                self.misfit_xyz1: cartesian misfit
+                self.misfit_enu1: spherical misfit
+                self.misfit_normcrossprod1: normalized dot product Vfit x Vobs
+                self.P11: estimated plateness P1
+                self.P12: estimated plateness P2
+                self.P1loc: pre-P1 field
+                self.P2loc: pre-P2 field
+                self.rotmask: boolean mask of vectors used during the inversion (depends on r)
         """
+        self.im('Get Rotation pole of plate '+str(plate1))
         if remove_edges:
+            self.im('   - remove edges: True')
             # prepare header
             grid_name,cartv_name,sphev_name,magG_name,ptID_name = self.header
         self.invrot_rfactor = r
         self.plate1 = plate1
-        self.im('Get Rotation pole of plate '+str(plate1))
         self.im('   - Build TessellatedPolygon object for the plate 1')
         self.im('       -> plate ID: '+str(plate1))
         self.im('       -> rfactor : '+str(r))
@@ -1633,7 +1691,10 @@ class PlateGather:
             pttk1.vy = self.vy[cond1]
             pttk1.vz = self.vz[cond1]
         self.im('   - Inverse for the rotation pole of PLATE1 in FIX-MANTLE')
-        self.wx1,self.wy1,self.wz1,self.residual1,self.misfit_xyz1,self.misfit_enu1,self.misfit_normcrossprod1,self.P11,self.P12,self.P1loc,self.P2loc,self.rotmask = regEEPP(pttk1,r=r,rplot=rplot,verbose=verbose,plot=plot,maxiter=maxiter)
+        self.wx1,self.wy1,self.wz1,self.residual1,self.misfit_xyz1,self.misfit_enu1,self.misfit_normcrossprod1,self.P11,self.P12,self.P1loc,self.P2loc,self.rotmask = \
+            regEEPP(pttk1, r=r, mp=mp, maxiter=maxiter, errmax=errmax, convmax=convmax, residual0=residual0, small=small,\
+                    tarantola=tarantola, kappa=kappa, ponderated=ponderated,\
+                    plot=plot, rplot=rplot, scale=scale, width=width, verbose=verbose)
         self.im('      - plateness P1 for the plate1: '+str(self.P11))
         self.im('      - plateness P2 for the plate1: '+str(self.P12))
         latp1,lonp1,omega1 = wxwywz2latlonw(self.wx1,self.wy1,self.wz1)  # result already on degrees
@@ -1645,7 +1706,10 @@ class PlateGather:
 
 
 
-    def get_all_rotations(self,r=None,remove_edges=False,rplot=1,on_poly=False,plot=False,verbose=False,ignore_small=True,smin=Project.polyminsize,maxiter=10):
+    def get_all_rotations(self,remove_edges=False,on_poly=False,ignore_small=True,smin=Project.polyminsize,
+                          r=None,mp=(1,1,1),maxiter=100,errmax=0.01,convmax=1e-3,residual0=1e17,\
+                          small=1e-6,tarantola=False,kappa=1,ponderated=False,\
+                          plot=False,rplot=10,scale=6e4,width=5e-4,verbose=False):
         """
         Computes all the rotations fitting the displacement field of all plates/polygons.
         
@@ -1666,27 +1730,67 @@ class PlateGather:
                         of a plate/polygon to be considered during the inversion if
                         the option 'ignore_small' is set to True.
                         Defaults: MAPT3.project.Project.polyminsize
-            remove_edges (bool, optional): Option controling if you want to remove
-                        edege points from the data to invert.
-                        Default: remove_edges = False
-            maxiter (int):  maximum number of iteration to converge.
-                        Defaults: maxiter=100
-            on_poly (bool, optional): Option controling if you want to apply
-                        the function on the plateIDpoly field (external
-                        tessellation from a polygon file).
-                        Defaults: on_poly = False
-            plot (bool, optional): If true, generates a figure showing the result
-                        of the inversion.
-                        Defaults: plot = True
-            rplot (int, optional): Only if plot is True. Controls the number of
-                        data point showed according to the data set considered
-                        for the inversion (so, including the resampling with the
-                        parameter 'r').
-                        Default: rplot = 1
-            verbose (bool, optional): If True then, generate a verbose output
-                        in the terminal.
-                        Defaults: verbose = False
+            
+            ------------------- INVERSION FUNCTION PARAMETERS -------------------
+
+            Use the function pypStag.kinematics.regEEPP()
+    
+            --- General
+
+            mp      = (tuple), prior model for (Wx,Wy,Wz) [default, mp=(1,1,1)]
+
+            --- Convergence scheme: May require adaptation depending on velocities values
+
+            maxiter = (int),  maximum number of iteration [default, maxiter=100]
+                        -> convergence reached by max number of iterations
+            errmax  = (float), maximum residual to define the convergence [default, errmax=0.01]
+                        Inversion considered as converged when residual < errmax
+                        -> convergence on absolute error
+            convmax = (float) minimum residual difference allowed between two consecutive
+                        iterations [default, convmax=1e-3]. Inversion considered as converged
+                        when abs(residual[-1]-residual[-2]) < convmax
+                        -> convergence on relative error
+                        NOTE: If residual0 is not choosen carefully, may converge to early.
+            residual0 = (None or float), initial residual associated to the prior.
+                        If residual0 is None, then will compute the true residual associated to the
+                        set input prior model. Be careful, if errmax is too large, may reach the convergence
+                        without any inversion, just with the a priori model. Now you know :)
+                        Else, if residual is a float, will replace the true prior residual to force
+                        the function to perform at least an inversion if residual0 is set very large
+                        relative to the errmax (recommended option). [default, residual0=1e17]
+            small = (float), define the level of noise (small fluctuation) for the covariance of data.
+                        Will be added to Cd in order to avoid singularity problem during the inversion.
+                        The code will rise a warning if small is not at least x1000 smaller than the
+                        values of the Cd matrix. [default, small=1e-6]
+            
+            --- Inversion scheme and parameters:
+            
+            tarantola = (bool), to adopte the Generalized Least Square formulation (Tarantola 2005)
+                        otherwise, the numerical sheme will be tykhonov regularization
+                        [default, tarantola=False]
+            kappa   = (int), tykhonov regularization parameter used only if tarantola == False
+                        [default, kappa=1]
+
+            --- Figure
+
+            plot    = (bool), option to display the solution [default, plot=False]
+            rplot   = (int), resampling parameter to enable to plot all the data [default, rplot=10]
+            scale   = (int/float), scale factor for the representation of the velocity vectors. [default, scale=6e4]
+            width   = (int/float), width factor for the representation of the velocity vectors. [default, width=5e-4]
+            verbose = (bool), if set to True, then activate the verbose output for this function.
+                      [default, verbose=False]
+        
+        Returns:
+            
+            Nothing returned.
+
+            Fills the internal fields: See the documentation of the inversion function.
+                self.wx, self.wy, self.wz: rotation vectors for each plates (each numpy.ndarray, size=self.nop)
+                self.P1: estimated plateness P1 for each plates (numpy.ndarray, size=self.nop)
+                self.P2: estimated plateness P2 for each plates (numpy.ndarray, size=self.nop)
         """
+        self.im('--- Get all rotations')
+        self.im('Preparation of the i/o')
         if r is None:
             save_r = None
         else:
@@ -1712,6 +1816,9 @@ class PlateGather:
         self.wz     = np.zeros(nop)
         id = np.array(range(nod))
         upID = np.unique(self.plateID)
+        
+        self.im('Iteration on all plates.')
+        # iterate on all plates
         for i in range(nop):
             pID = upID[i]
             surf  = np.count_nonzero(plateID==pID)
@@ -1772,7 +1879,8 @@ class PlateGather:
                 self.im('      - plateness P1 for the plate1: '+str(self.P1[i]))
                 self.im('      - plateness P2 for the plate1: '+str(self.P2[i]))
             else:
-                self.im('Ignore a very small plate')
+                print('-'*50)
+                self.im('Ignore a very small plate: '+str(i)+'/'+str(nop-1))
 
     
     def compute_dim_perimeter_area(self,plot=False):
