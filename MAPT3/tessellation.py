@@ -27,6 +27,7 @@ from .geotransform import *
 from .geometry import areatriangle3d, polygon_perimeter_and_ordening
 from .kinematics import *
 from .io import write_PersistenceDiag_VTK, shell2VTK
+from .compute import distribution
 
 
 # ----------------- FUNCTIONS -----------------
@@ -1936,6 +1937,70 @@ class PlateGather:
         self.surfdim = self.surfdim * (4*np.pi*Project.planetaryModel.radius**2)/tri.area # dim
         
           
+
+    def get_distribution(self,binning='log',nbins=10,step=5,small='auto',plot=False,verbose=False):
+        """
+        Function computing and returning the cumulative, inverse
+        cumulative and PDF representing the distribution of an
+        input dataset.
+        The distributions are computing according to three choices
+        of binning: linear, log space and step.
+
+        Args:
+            binning (str, optional): binning method:
+                        "lin", linear binning with 'nbins' bins
+                        "log", bin in log space with 'nbins' bins
+                        "step", bin every 'step' samples
+                        (Default, binning = "log").
+            nbins (int, optional): number of bins if binning in
+                        ['lin','log']. (Default, nbins=10)
+            step (int, optional): binning every 'step' samples when
+                        binning == 'step'. (Default, step=5)
+            small (float, optional): define a 'small' (not significant)
+                        value for the dataset (negligible quantity).
+                        Added to the sample with the maximum value.
+                        If small is "auto" then, define "small" as being
+                        1/1000 of the smallest value in the input dataset.
+                        (Default, small = "auto")
+            plot (bool, optional): If True then, produce a figure
+                        displaying the resulting PDF.
+                        (Default, plot = False)
+            verbose (bool, optional): Verbose output option.
+                        (Default, verbose = False)
+        
+        Returns:
+            bins (numpy.ndarray): used binning
+            invcumul (numpy.ndarray): resulting inverse cumulative
+            cumul (numpy.ndarray): resulting cumulative (derived from invcumul)
+            pdf (numpy.ndarray): resulting PDF (derived from invcumul)
+        """
+        if len(self.surfdim) != self.nop:
+            raise ValueError('Missing dimensionalized plate areas. Use first the internal function compute_dim_perimeter_area()')
+        else:
+            data = self.surfdim.copy()
+            bins, invcumul, cumul, pdf = distribution(data, binning=binning, nbins=nbins, step=step, small=small, plot=False, verbose=verbose)
+            
+            # Plot the PDF
+            if plot:
+
+                # For plotting, we use the midpoints between successive sorted data values
+                midpoints = (bins[:-1] + bins[1:]) / 2
+
+                # Figure
+                fig = plt.figure(figsize=(8, 6))
+                ax  = fig.add_subplot(111)
+                ax.plot(midpoints, pdf, marker='o', linestyle='-', color='k', linewidth=2)
+                ax.set_title('Probability Density Function at the mid-points of the bins')
+                ax.set_xlabel('Plate area (km'+r'$^2$'+')')
+                ax.set_ylabel('Probability Density')
+                ax.grid(True)
+                if binning == 'log':
+                    ax.set_xscale('log')
+                    ax.set_yscale('log')
+                plt.show()
+            
+            return bins, invcumul, cumul, pdf
+
 
     def expand_plate2surface(self,arr,on_poly=False):
         """
