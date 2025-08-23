@@ -183,9 +183,9 @@ References:
     Science advances 5(10), eaax4295 (2019).
 
   - Janin, A., Coltice, N., Chamot-Rooke, N., Tierny, J.
-    Topological data analysis reveals mantle-lithosphere
-    dynamical interactions through global plate reorganisations.
-    Nature Geoscience. (accepted, 2025)
+    Geodynamics of a global plate reorganization from
+    topological data analysis. Nature Geoscience (2025).
+    https://doi.org/10.1038/s41561-025-01772-7
 
   - Masood, T. B., Budin, J., Falk, M., Favelier, G., Garth, C.,
     Gueunet, C., Guillou, P., Hofmann, L., Hristov, P.,

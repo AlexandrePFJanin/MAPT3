@@ -74,7 +74,7 @@ If you use MAPT<sup>3</sup> in your research, we kindly ask that you cite the fo
 
 You can use the following APA style citation:
 
-> Janin, A., Coltice, N., Chamot-Rooke, N. et al. Geodynamics of a global plate reorganization from topological data analysis. Nat. Geosci. (2025). https://doi.org/10.1038/s41561-025-01772-7
+> Janin, A., Coltice, N., Chamot-Rooke, N., Tierny, J. Geodynamics of a global plate reorganization from topological data analysis. Nature Geoscience (2025). https://doi.org/10.1038/s41561-025-01772-7
 
 Or the following bibTeX citation:
 
